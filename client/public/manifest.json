@@ -1,0 +1,18 @@
+{
+  "short_name": "MineTrack",
+  "name": "MineTrack — Mining Operations Platform",
+  "description": "Mining Equipment & Tyre Maintenance Management Platform",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0B1329",
+  "theme_color": "#0F172A",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "scope": "/"
+}

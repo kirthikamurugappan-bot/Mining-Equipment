@@ -1,0 +1,17 @@
+{
+  "name": "minetrack",
+  "version": "1.0.0",
+  "description": "MineTrack - Mining Equipment & Tyre Maintenance Management Platform",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "seed": "cd server && npm run seed",
+    "test:api": "node server/test-api.js",
+    "test:e2e": "node server/test-e2e-workflow.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
