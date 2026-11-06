@@ -3,7 +3,7 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'minetrack_jwt_secret_key_2024_secure', { expiresIn: process.env.JWT_EXPIRE || '7d' });
 };
 
 // @desc    Login user
