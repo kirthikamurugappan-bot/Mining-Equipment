@@ -37,14 +37,25 @@ const userSchema = new mongoose.Schema({
 userSchema.pre('validate', async function(next) {
   if (!this.userId) {
     const prefix = this.role === 'admin' ? 'ADM' : this.role === 'supervisor' ? 'SUP' : 'WRK';
-    const count = await mongoose.model('User').countDocuments({ role: this.role });
-    this.userId = `${prefix}-${String(count + 1).padStart(3, '0')}`;
+    let count = await mongoose.model('User').countDocuments({ role: this.role }) + 1;
+    let candidateId = `${prefix}-${String(count).padStart(3, '0')}`;
+    while (await mongoose.model('User').findOne({ userId: candidateId })) {
+      count++;
+      candidateId = `${prefix}-${String(count).padStart(3, '0')}`;
+    }
+    this.userId = candidateId;
   }
   if (!this.employeeId) {
     this.employeeId = this.userId;
   }
   if (!this.username) {
-    this.username = this.userId.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let baseUsername = (this.email ? this.email.split('@')[0] : this.userId).toLowerCase().replace(/[^a-z0-9]/g, '');
+    let candidateUsername = baseUsername || 'user';
+    let uCount = 1;
+    while (await mongoose.model('User').findOne({ username: candidateUsername })) {
+      candidateUsername = `${baseUsername}${uCount++}`;
+    }
+    this.username = candidateUsername;
   }
   next();
 });

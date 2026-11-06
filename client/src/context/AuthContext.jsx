@@ -52,6 +52,20 @@ export const AuthProvider = ({ children }) => {
     return { success: false, message: res.data.message || 'Login failed' };
   };
 
+  const register = async (formData) => {
+    const res = await api.post('/auth/register', formData);
+    if (res.data.success) {
+      const newToken = res.data.token;
+      const newUser = res.data.user || res.data.data?.user || res.data.data;
+      setToken(newToken);
+      setUser(newUser);
+      localStorage.setItem('minetrack_token', newToken);
+      localStorage.setItem('minetrack_user', JSON.stringify(newUser));
+      return { success: true, user: newUser };
+    }
+    return { success: false, message: res.data.message || 'Registration failed' };
+  };
+
   const logout = async () => {
     try {
       if (token) {
@@ -78,6 +92,7 @@ export const AuthProvider = ({ children }) => {
       token,
       loading,
       login,
+      register,
       logout,
       updateUser,
       isAuthenticated: !!token && !!user

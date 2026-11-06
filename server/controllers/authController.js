@@ -6,6 +6,94 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'minetrack_jwt_secret_key_2024_secure', { expiresIn: process.env.JWT_EXPIRE || '7d' });
 };
 
+// @desc    Register a new user
+// @route   POST /api/auth/register
+// @access  Public
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    const rawEmail = (email || '').trim().toLowerCase();
+    const rawPassword = password || '';
+    const rawName = (name || '').trim() || (rawEmail.split('@')[0] || 'User');
+    const selectedRole = ['admin', 'supervisor', 'worker'].includes(role) ? role : 'worker';
+
+    if (!rawEmail) {
+      return res.status(400).json({ success: false, message: 'Email address is required.' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(rawEmail)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
+
+    if (!rawPassword || rawPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+    }
+
+    const existing = await User.findOne({ email: rawEmail });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'An account with this email address already exists. Please log in.' });
+    }
+
+    let baseUsername = rawEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
+    let username = baseUsername;
+    let counter = 1;
+    while (await User.findOne({ username })) {
+      username = `${baseUsername}${counter++}`;
+    }
+
+    const newUser = await User.create({
+      name: rawName,
+      email: rawEmail,
+      username,
+      password: rawPassword,
+      role: selectedRole,
+      department: selectedRole === 'admin' ? 'Management' : selectedRole === 'supervisor' ? 'Operations' : 'Maintenance',
+      designation: selectedRole === 'admin' ? 'Administrator' : selectedRole === 'supervisor' ? 'Supervisor' : 'Equipment Operator',
+      availability: 'Available',
+      isActive: true
+    });
+
+    try {
+      await AuditLog.create({
+        user: newUser._id,
+        userRole: newUser.role,
+        action: 'User Registered',
+        module: 'auth',
+        description: `New user ${newUser.name} (${newUser.email}) registered as ${newUser.role}`,
+        ipAddress: req.ip
+      });
+    } catch (auditErr) {
+      console.warn('Register audit log skipped:', auditErr.message);
+    }
+
+    const token = generateToken(newUser._id);
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful!',
+      token,
+      user: {
+        _id: newUser._id,
+        userId: newUser.userId,
+        username: newUser.username,
+        employeeId: newUser.employeeId || newUser.userId,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        phone: newUser.phone,
+        department: newUser.department,
+        designation: newUser.designation,
+        availability: newUser.availability || 'Available',
+        themePreference: newUser.themePreference,
+        notificationPreferences: newUser.notificationPreferences
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Registration failed. Please try again.' });
+  }
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
